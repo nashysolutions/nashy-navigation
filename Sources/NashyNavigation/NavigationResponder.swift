@@ -1,26 +1,27 @@
 import SwiftUI
 
-public struct Hello<D: ItemDetailViewProvider> {
+public struct NavigationResponder<D: ItemDetailViewProvider> {
     
-    let selection: D.Item?
+    @Binding var selection: D.Item?
+    
     let destination: D.Type
     
-    public init(selection: D.Item?, destination: D.Type) {
-        self.selection = selection
+    public init(selection: Binding<D.Item?>, destination: D.Type) {
+        self._selection = selection
         self.destination = destination
     }
 }
 
 public extension View {
     
-    func pushNavigation<D: ItemDetailViewProvider>(_ hello: Hello<D>) -> some View {
-        modifier(Moddy<D>(selection: hello.selection))
+    func pushNavigation<D: ItemDetailViewProvider>(_ hello: NavigationResponder<D>) -> some View {
+        modifier(Moddy<D>(selection: hello.$selection))
     }
 }
 
 private struct Moddy<Build: ItemDetailViewProvider>: ViewModifier {
     
-    let selection: Build.Item?
+    @Binding var selection: Build.Item?
     
     @State private var isActive: Bool = false
     
@@ -29,6 +30,9 @@ private struct Moddy<Build: ItemDetailViewProvider>: ViewModifier {
             content
                 .onChange(of: selection) { newValue in
                     isActive = (newValue != nil)
+                }
+                .onAppear {
+                    selection = nil
                 }
             NavigationLink(
                 destination: LazyView(item: selection, destination: Build.self),
